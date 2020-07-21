@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: www.jnvilo.com
+  labels:
+    app: www.jnvilo.com
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: www.jnvilo.com
+  template:
+    metadata:
+      labels:
+        app: www.jnvilo.com
+    spec:
+      containers:
+      - name: django
+        image: hub.lnxsystems.com/jnvilo/django:0.0.4
+        ports:
+        - containerPort: 8000
+      - name: nginx
+        image: nginx
+        ports:
+        - containerPort: 80
+      imagePullSecrets:
+        - name: regcred
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: www-jnvilo-com-service
+spec:
+  selector:
+    app: www.jnvilo.com
+  ports:
+    - protocol: TCP
+      port: 8000
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: www-jnvilo-com-nginx-service
+spec:
+  selector:
+    app: www.jnvilo.com
+  ports:
+    - protocol: TCP
+      port: 80
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: www.jnvilo.com-ingress
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+spec:
+  rules:
+  - host: k3s.lab
+    http:
+      paths:
+      - path: /admin
+        backend:
+          serviceName: www-jnvilo-com-service
+          servicePort: 8000
+ 
+
+
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: www.jnvilo.com-nginx-ingress
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+spec:
+  rules:
+  - host: k3s.lab
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: www-jnvilo-com-nginx-service
+          servicePort: 80
+ 
